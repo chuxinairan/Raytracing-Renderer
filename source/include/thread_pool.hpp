@@ -1,30 +1,36 @@
 #pragma once
 
+#include <atomic>
+#include <functional>
+#include <list>
 #include <thread>
 #include <vector>
-#include <list>
-#include <mutex>
 
-class Task
-{
+#include "spin_lock.hpp"
+
+class Task {
 public:
-    virtual void run() = 0;
+  virtual void run() = 0;
 };
 
-class ThreadPool
-{
+class ThreadPool {
 public:
-    static void WorkerThread(ThreadPool *master);
+  static void WorkerThread(ThreadPool *master);
 
-    ThreadPool(size_t thread_count = 0);
-    ~ThreadPool();
+  void wait() const;
 
-    void addTask(Task *task);
-    Task *getTask();
+  ThreadPool(size_t thread_count = 0);
+  ~ThreadPool();
+
+  void parallelFor(size_t width, size_t height,
+                   const std::function<void(size_t, size_t)> &lambda);
+
+  void addTask(Task *task);
+  Task *getTask();
 
 private:
-    bool alive;
-    std::vector<std::thread> threads;
-    std::list<Task *> tasks;
-    std::mutex lock;
+  std::atomic<int> alive;
+  std::vector<std::thread> threads;
+  std::list<Task *> tasks;
+  Spinlock spin_lock{};
 };
