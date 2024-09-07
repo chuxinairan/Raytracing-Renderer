@@ -1,12 +1,11 @@
-#include <optional>
-#include <glm/glm.hpp>
+#pragma once
 
-#include "ray.hpp"
+#include "shape.hpp"
 
-struct Sphere
-{
+struct Sphere : public Shape {
+    Sphere(const glm::vec3& center, float radius) : center(center), radius(radius) {}
+    virtual std::optional<HitInfo> intersect(Ray& ray, float t_min = 1e-5, float t_max = std::numeric_limits<float>::infinity()) const override;
+    
     glm::vec3 center;
     float radius;
-
-    std::optional<float> intersect(const Ray& ray) const;
 };
