@@ -9,29 +9,37 @@
 
 #include "model.hpp"
 #include "sphere.hpp"
+#include "plane.hpp"
+#include "scene.hpp"
 
 int main() {
   ThreadPool thread_pool{};
   std::atomic<int> count = 0;
 
   // Camera
-  Film film{1920, 1080};
-  Camera camera(film, {-1, 0, 0}, {0, 0, 0}, 90);
+  Film film{ 1920, 1080 };
+  Camera camera(film, { -1.2, 0.07, 0 }, { 0, 0.25, 0 }, 90);
 
   // Model
   Model model("models/simple_dragon.obj");
-  Sphere sphere{{0, 0, 0}, 0.5f};
-
-  Shape &shape = model;
+  Sphere sphere{{ 0 , 0, 0 }, 0.5f};
+  Plane plane{
+    { 0, 0, 0 },
+    { 0, 1, 0 }
+  };
+  Scene scene{};
+  scene.addShape(&model, { 0, 0, -0.3 }, { 0, 0, 30 }, { 1, 1.7, 1.5 });
+  scene.addShape(&sphere, { 0, 0, 1.0 }, { 0, 0, 0 }, { 0.3, 0.3, 0.3 });
+  scene.addShape(&plane, { 0, -0.6, 0 });
 
   // Light
-  glm::vec3 light_pos{-1, 2, 1};
+  glm::vec3 light_pos{-1, 1.8, -1};
 
   auto last = std::chrono::high_resolution_clock::now();
   thread_pool.parallelFor(
       film.getWidth(), film.getHeight(), [&](size_t x, size_t y) {
         Ray ray = camera.generateRay({x, y});
-        auto hit_info = shape.intersect(ray);
+        auto hit_info = scene.intersect(ray);
 
         if (hit_info.has_value()) {
           auto normal = hit_info.value().normal;
@@ -55,6 +63,5 @@ int main() {
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(Time);
   std::cout << "Time: " << ms.count() << "ms\n" << std::endl;
   film.save("test.ppm");
-  std::cout << "Total Faces: " << model.GetTriangleCount() << std::endl;
   return 0;
 }
