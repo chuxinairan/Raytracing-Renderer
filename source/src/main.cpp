@@ -1,5 +1,6 @@
 #include <atomic>
 #include <iostream>
+#include <random>
 
 #include <glm/glm.hpp>
 
@@ -8,45 +9,76 @@
 #include "thread_pool.hpp"
 
 #include "model.hpp"
-#include "sphere.hpp"
 #include "plane.hpp"
 #include "scene.hpp"
+#include "sphere.hpp"
+
+#include "frame.hpp"
+#include "rgb.hpp"
 
 int main() {
   ThreadPool thread_pool{};
   std::atomic<int> count = 0;
 
   // Camera
-  Film film{ 1920, 1080 };
-  Camera camera(film, { -1.2, 0.07, 0 }, { 0, 0.25, 0 }, 90);
+  Film film{192*4, 108*4};
+  Camera camera{film, {-3.6, 0, 0}, {0, 0, 0}, 45};
 
   // Model
   Model model("models/simple_dragon.obj");
-  Sphere sphere{{ 0 , 0, 0 }, 0.5f};
-  Plane plane{
-    { 0, 0, 0 },
-    { 0, 1, 0 }
-  };
-  Scene scene{};
-  scene.addShape(&model, { 0, 0, -0.3 }, { 0, 0, 30 }, { 1, 1.7, 1.5 });
-  scene.addShape(&sphere, { 0, 0, 1.0 }, { 0, 0, 0 }, { 0.3, 0.3, 0.3 });
-  scene.addShape(&plane, { 0, -0.6, 0 });
+  Sphere sphere{{0, 0, 0}, 1};
+  Plane plane{{0, 0, 0}, {0, 1, 0}};
 
-  // Light
-  glm::vec3 light_pos{-1, 1.8, -1};
+  Scene scene{};
+  scene.addShape(model, {RGB(202, 159, 117)},
+                 {0, 0, 0}, {1, 3, 2});
+  scene.addShape(sphere, {{1, 1, 1}, false, RGB(255, 128, 128)}, {0, 0, 2.5});
+  scene.addShape(sphere, {{1, 1, 1}, false, RGB(128, 128, 255)}, {0, 0, -2.5});
+  scene.addShape(sphere, {{1, 1, 1}, true}, {3, 0.5, -2});
+  scene.addShape(plane, {RGB(120, 204, 157)}, {0, -0.5, 0});
+
+  std::mt19937 gen(23451334);
+  std::uniform_real_distribution<float> uniform(-1, 1);
+  int ssp = 1;
 
   auto last = std::chrono::high_resolution_clock::now();
   thread_pool.parallelFor(
       film.getWidth(), film.getHeight(), [&](size_t x, size_t y) {
-        Ray ray = camera.generateRay({x, y});
-        auto hit_info = scene.intersect(ray);
+        for (int i = 0; i < ssp; i++) {
+          Ray ray = camera.generateRay({x, y}, {abs(uniform(gen)), abs(uniform(gen))});
+          glm::vec3 color = {0, 0, 0};
+          glm::vec3 beta = {1, 1, 1};
 
-        if (hit_info.has_value()) {
-          auto normal = hit_info.value().normal;
-          auto light_dir =
-              glm::normalize(light_pos - hit_info.value().hit_point);
-          float cosine = glm::max(0.0f, glm::dot(normal, light_dir));
-          film.setPixel(x, y, {cosine, cosine, cosine});
+          while (true) {
+            auto hit_info = scene.intersect(ray);
+            if (hit_info.has_value()) {
+              color += beta * hit_info->material->emissive;
+              beta *= hit_info->material->albedo;
+
+              ray.origin = hit_info->hit_point;
+
+              Frame frame(hit_info->normal);
+              glm::vec3 light_direction;
+              if (hit_info->material->is_specular) {
+                glm::vec3 view_direction = frame.localFromWorld(-ray.direction);
+                light_direction = glm::vec3(-view_direction.x, view_direction.y,
+                                            -view_direction.z);
+              } else {
+                do {
+                  light_direction =
+                      glm::vec3(uniform(gen), uniform(gen), uniform(gen));
+                } while (glm::length(light_direction) > 1);
+                if (light_direction.y < 0) {
+                  light_direction.y = -light_direction.y;
+                }
+              }
+              ray.direction = frame.worldFromLocal(light_direction);
+            } else {
+              break;
+            }
+          }
+
+          film.addSample(x, y, color);
         }
 
         // processor
@@ -62,6 +94,6 @@ int main() {
   auto Time = std::chrono::high_resolution_clock::now() - last;
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(Time);
   std::cout << "Time: " << ms.count() << "ms\n" << std::endl;
-  film.save("test.ppm");
+  film.save("1920x1080-1采样.ppm");
   return 0;
 }

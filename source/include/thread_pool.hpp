@@ -2,7 +2,7 @@
 
 #include <atomic>
 #include <functional>
-#include <list>
+#include <queue>
 #include <thread>
 #include <vector>
 
@@ -32,6 +32,6 @@ private:
   std::atomic<int> alive;
   std::vector<std::thread> threads;
   std::atomic<int> pending_task_count;  // 记录未执行完成的任务数量
-  std::list<Task *> tasks;
+  std::queue<Task *> tasks;
   Spinlock spin_lock{};
 };

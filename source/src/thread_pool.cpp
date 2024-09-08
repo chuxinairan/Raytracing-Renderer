@@ -1,4 +1,5 @@
 #include "thread_pool.hpp"
+#include <iostream>
 
 void ThreadPool::WorkerThread(ThreadPool *master) {
   while (master->alive == 1) {
@@ -14,6 +15,7 @@ void ThreadPool::WorkerThread(ThreadPool *master) {
 
 void ThreadPool::wait() const {
   while (pending_task_count > 0) {
+    std::cout << "Unfinished task count: " << pending_task_count << std::endl;
     std::this_thread::yield();
   }
 }
@@ -58,7 +60,7 @@ void ThreadPool::parallelFor(
   for (size_t x = 0; x < width; x++) {
     for (size_t y = 0; y < height; y++) {
       pending_task_count++;
-      tasks.push_back(new ParallelForTask(x, y, lambda));
+      tasks.push(new ParallelForTask(x, y, lambda));
     }
   }
 }
@@ -66,7 +68,7 @@ void ThreadPool::parallelFor(
 void ThreadPool::addTask(Task *task) {
   Guard guard(spin_lock);
   pending_task_count++;
-  tasks.push_back(task);
+  tasks.push(task);
 }
 
 Task *ThreadPool::getTask() {
@@ -74,6 +76,6 @@ Task *ThreadPool::getTask() {
   if (tasks.empty())
     return nullptr;
   Task *task = tasks.front();
-  tasks.pop_front();
+  tasks.pop();
   return task;
 }
