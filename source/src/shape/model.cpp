@@ -1,57 +1,79 @@
 #include "shape/model.hpp"
 
-#include <fstream>
-#include <sstream>
-#include <iostream>
+#include <rapidobj/rapidobj.hpp>
+
+#include "utils/profile.hpp"
 
 Model::Model(const std::filesystem::path& filename)
 {
-    // v 1.0 2.0 3.0
-    std::vector<glm::vec3> positions;
-    // vn 1.0 2.0 3.0
-    std::vector<glm::vec3> normals;
-    // f 1//2 2//3 3//4
+    PROFILE("Load model")
 
-    std::ifstream file(filename);
-    if(!file.good()) {
-        std::cout << "文件读取失败" << std::endl;
-    }
+    auto result = rapidobj::ParseFile(filename, rapidobj::MaterialLibrary::Ignore());
 
-    std::string line;
-    char trash;
-    while(!file.eof()) {
-        std::getline(file, line);
-        std::istringstream iss(line);
+    for (const auto &shape : result.shapes) {
+        size_t index_offset = 0;
+        for (size_t num_face_vectex : shape.mesh.num_face_vertices) {
+            if (num_face_vectex == 3) {
+                auto index = shape.mesh.indices[index_offset];
+                glm::vec3 pos0 {
+                    result.attributes.positions[index.position_index * 3 + 0],
+                    result.attributes.positions[index.position_index * 3 + 1],
+                    result.attributes.positions[index.position_index * 3 + 2]
+                };
+                index = shape.mesh.indices[index_offset + 1];
+                glm::vec3 pos1 {
+                    result.attributes.positions[index.position_index * 3 + 0],
+                    result.attributes.positions[index.position_index * 3 + 1],
+                    result.attributes.positions[index.position_index * 3 + 2]
+                };
+                index = shape.mesh.indices[index_offset + 2];
+                glm::vec3 pos2 {
+                    result.attributes.positions[index.position_index * 3 + 0],
+                    result.attributes.positions[index.position_index * 3 + 1],
+                    result.attributes.positions[index.position_index * 3 + 2]
+                };
 
-        if(line.compare(0, 2, "v ") == 0){
-            // v 1.0 2.0 3.0
-            glm::vec3 position;
-            iss >> trash >> position.x >> position.y >> position.z;
-            positions.push_back(position);
-        } else if(line.compare(0, 3, "vn ") == 0) {
-            // vn 1.0 2.0 3.0
-            glm::vec3 normal;
-            iss >> trash >> trash >> normal.x >> normal.y >> normal.z;
-            normals.push_back(normal);
-        } else if(line.compare(0, 2, "f ") == 0) {
-            // f 1//2 2//3 3//4
-            glm::ivec3 ind_v, ind_vn;
-            iss >> trash;
-            iss >> ind_v.x >> trash >> trash >> ind_vn.x;
-            iss >> ind_v.y >> trash >> trash >> ind_vn.y;
-            iss >> ind_v.z >> trash >> trash >> ind_vn.z;
-
-            Triangle triangle(
-                positions[ind_v.x - 1], positions[ind_v.y - 1], positions[ind_v.z - 1],   // obj下标是以1开头的
-                normals[ind_vn.x - 1], normals[ind_vn.y - 1], normals[ind_vn.z - 1]
-            );
-            triangles.push_back(triangle);
+                if (index.normal_index >= 0) {
+                    index = shape.mesh.indices[index_offset];
+                    glm::vec3 normal0 {
+                        result.attributes.normals[index.normal_index * 3 + 0],
+                        result.attributes.normals[index.normal_index * 3 + 1],
+                        result.attributes.normals[index.normal_index * 3 + 2]
+                    };
+                    index = shape.mesh.indices[index_offset + 1];
+                    glm::vec3 normal1 {
+                        result.attributes.normals[index.normal_index * 3 + 0],
+                        result.attributes.normals[index.normal_index * 3 + 1],
+                        result.attributes.normals[index.normal_index * 3 + 2]
+                    };
+                    index = shape.mesh.indices[index_offset + 2];
+                    glm::vec3 normal2 {
+                        result.attributes.normals[index.normal_index * 3 + 0],
+                        result.attributes.normals[index.normal_index * 3 + 1],
+                        result.attributes.normals[index.normal_index * 3 + 2]
+                    };
+                    triangles.push_back(Triangle {
+                        pos0, pos1, pos2, normal0, normal1, normal2
+                    });
+                } else {
+                    triangles.push_back(Triangle {
+                        pos0, pos1, pos2
+                    });
+                }
+            }
+            index_offset += num_face_vectex;
         }
     }
+    
+    build();
 }
 
 std::optional<HitInfo> Model::intersect(Ray& ray, float t_min, float t_max) const
 {
+    if(!bound.hasIntersection(ray, t_min, t_max)) {
+        return {};
+    }
+
     std::optional<HitInfo> closest_hit_info{};
     for(const auto& triangle : triangles)
     {
@@ -62,4 +84,14 @@ std::optional<HitInfo> Model::intersect(Ray& ray, float t_min, float t_max) cons
         }
     }
     return closest_hit_info;
+}
+
+void Model::build()
+{
+    for(const auto& triangle : triangles)
+    {
+        bound.expand(triangle.p0);
+        bound.expand(triangle.p1);
+        bound.expand(triangle.p2);
+    }
 }

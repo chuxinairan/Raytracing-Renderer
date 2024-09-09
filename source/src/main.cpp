@@ -38,10 +38,46 @@ int main() {
   scene.addShape(plane, {RGB(120, 204, 157)}, {0, -0.5f, 0});
 
   NormalRenderer normal_renderer(camera, scene);
-  normal_renderer.render(8, "normal.ppm");
+  normal_renderer.render(1, "normal.ppm");
   
   SimpleRTRenderer simple_rt_renderer(camera, scene);
-  simple_rt_renderer.render(32, "simple_rt.ppm");
+  simple_rt_renderer.render(128, "simple_rt.ppm");
 
   return 0;
 }
+
+
+// Debug Mode
+// Load model: 163ms
+// first Parallel for: 773ms
+// Parallel for: 485ms
+// Save to simple_rt.ppm: 311ms
+// Render 1spp normal.ppm: 23993ms
+// Render 32spp simple_rt.ppm: 1966102ms
+// Render 128spp simple_rt-128spp.ppm: 7726695ms
+
+
+// Release Mode
+// Load model: 29ms
+// first Parallel for: 700ms
+// Parallel for: 245ms
+// Save to simple_rt.ppm: 89ms
+// Render 1spp normal.ppm: 1984ms
+// Render 32spp simple_rt.ppm: 108775ms
+
+
+// Change Paralledfor 
+// Parallel for: 0ms
+// Render 1spp normal.ppm: 1343ms
+// Render 128spp simple_rt.ppm: 462954ms
+
+// Change file.save
+// Save to simple_rt.ppm: 5ms
+
+// Add bounds
+// Load model: 31ms
+// Render 1spp normal.ppm: 269ms
+// Render 128spp simple_rtspp.ppm: 83884ms
+
+// rapidobj
+// Load model: 44ms

@@ -10,6 +10,7 @@
 
 class Task {
 public:
+  virtual ~Task() = default;
   virtual void run() = 0;
 };
 
@@ -23,7 +24,7 @@ public:
   ~ThreadPool();
 
   void parallelFor(size_t width, size_t height,
-                   const std::function<void(size_t, size_t)> &lambda);
+                   const std::function<void(size_t, size_t)> &lambda, bool isComplex = true);
 
   void addTask(Task *task);
   Task *getTask();
