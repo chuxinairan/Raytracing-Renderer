@@ -1,0 +1,5 @@
+#include "base_renderer.hpp"
+
+DEFINE_RENDERER(BoundsTestCount)
+DEFINE_RENDERER(TriangleTestCount)
+DEFINE_RENDERER(BoundsDepth)

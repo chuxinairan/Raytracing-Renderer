@@ -4,6 +4,8 @@
 
 #include "shape/material.hpp"
 
+#include "utils/debug_macro.hpp"
+
 struct Ray {
     glm::vec3 origin;
     glm::vec3 direction;
@@ -17,4 +19,8 @@ struct HitInfo {
     glm::vec3 hit_point;
     glm::vec3 normal;
     const Material* material = nullptr;
+
+    DEBUG_LINE(size_t bounds_test_count = 0)
+    DEBUG_LINE(size_t triangle_test_count = 0)
+    DEBUG_LINE(size_t bounds_depth = 0)  
 };

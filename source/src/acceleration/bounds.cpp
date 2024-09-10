@@ -1,9 +1,9 @@
 #include "acceleration/bounds.hpp"
 
-bool Bounds::hasIntersection(Ray& ray, float t_min, float t_max) const
+bool Bounds::hasIntersection(Ray& ray, const glm::vec3& inv_direction, float t_min, float t_max) const
 {
-    glm::vec3 t1 = (b_min - ray.origin) / ray.direction;
-    glm::vec3 t2 = (b_max - ray.origin) / ray.direction;
+    glm::vec3 t1 = (b_min - ray.origin) * inv_direction;
+    glm::vec3 t2 = (b_max - ray.origin) * inv_direction;
     glm::vec3 tmin = glm::min(t1, t2);
     glm::vec3 tmax = glm::max(t1, t2);
 

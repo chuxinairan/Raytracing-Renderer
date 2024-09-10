@@ -12,6 +12,8 @@ struct BVHTreeNode {
     Bounds bounds;
     std::vector<Triangle> triangles;
     BVHTreeNode* children[2];
+    size_t depth;
+    size_t split_axis;
 
     void updateBounds()
     {
@@ -25,20 +27,15 @@ struct BVHTreeNode {
     }
 };
 
-/*struct BVHNode {
-    Bounds bounds;
-    size_t child1_index;
-    size_t triangles_index;  //总的三角形列表中的索引
-    size_t triangles_count;  // 该节点拥有的三角形的数量
-};*/
-
 struct alignas(32) BVHNode {
     Bounds bounds;
     union {
         int child1_index;
         int triangles_index;  //总的三角形列表中的索引
     };
-    int triangles_count;  // 该节点拥有的三角形的数量
+    uint16_t triangles_count;  // 该节点拥有的三角形的数量
+    uint8_t depth;
+    uint8_t split_axis;
 };
 
 class BVH : public Shape
