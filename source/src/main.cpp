@@ -80,4 +80,7 @@ int main() {
 // Render 128spp simple_rtspp.ppm: 83884ms
 
 // rapidobj
-// Load model: 44ms
+// Load model: 4ms
+
+// Add bvh
+// Render 128spp simple_rt.ppm: 15078ms

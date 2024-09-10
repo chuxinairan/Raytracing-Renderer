@@ -72,7 +72,6 @@ void ThreadPool::parallelFor(
     size_t width, size_t height,
     const std::function<void(size_t, size_t)> &lambda, bool isComplex) {
   Guard guard(spin_lock);
-  PROFILE("Parallel for")
 
   float chunk_width_float = static_cast<float>(width) / sqrt(threads.size());
   float chunk_height_float = static_cast<float>(height) /  sqrt(threads.size());
