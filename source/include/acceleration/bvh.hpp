@@ -7,10 +7,11 @@
 #include "shape/triangle.hpp"
 #include "shape/shape.hpp"
 
-struct BVHNode {
+
+struct BVHTreeNode {
     Bounds bounds;
     std::vector<Triangle> triangles;
-    BVHNode* children[2];
+    BVHTreeNode* children[2];
 
     void updateBounds()
     {
@@ -24,15 +25,31 @@ struct BVHNode {
     }
 };
 
+/*struct BVHNode {
+    Bounds bounds;
+    size_t child1_index;
+    size_t triangles_index;  //总的三角形列表中的索引
+    size_t triangles_count;  // 该节点拥有的三角形的数量
+};*/
+
+struct alignas(32) BVHNode {
+    Bounds bounds;
+    union {
+        int child1_index;
+        int triangles_index;  //总的三角形列表中的索引
+    };
+    int triangles_count;  // 该节点拥有的三角形的数量
+};
+
 class BVH : public Shape
 {
 public:
     void build(std::vector<Triangle> &&triangles);
     std::optional<HitInfo> intersect(Ray& ray, float t_min = 1e-5, float t_max = std::numeric_limits<float>::infinity()) const override;
 private:
-    void recursiveSpilt(BVHNode* node);
-    // t_max要使用引用，因为要更新传入递归的的值
-    void recursiveIntersect(BVHNode* node, Ray& ray, float t_min, float& t_max, std::optional<HitInfo>& closest_hit) const;
+    void recursiveSpilt(BVHTreeNode* node);
+    size_t recursiveFlatten(BVHTreeNode* node);
 private:
-    BVHNode* root;
+    std::vector<Triangle> ordered_triangles;
+    std::vector<BVHNode> nodes;
 };

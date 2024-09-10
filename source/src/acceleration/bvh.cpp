@@ -1,14 +1,18 @@
 #include "acceleration/bvh.hpp"
 
+#include <array>
+
 void BVH::build(std::vector<Triangle> &&triangles)
 {
-    root = new BVHNode();
+    auto* root = new BVHTreeNode();
     root->triangles = std::move(triangles);
     root->updateBounds();
     recursiveSpilt(root);
+
+    recursiveFlatten(root);
 }
 
-void BVH::recursiveSpilt(BVHNode* node)
+void BVH::recursiveSpilt(BVHTreeNode* node)
 {
     if(node->triangles.size() == 1) {
         return;
@@ -29,8 +33,8 @@ void BVH::recursiveSpilt(BVHNode* node)
     if(child0_triangles.empty() || child1_triangles.empty()) {
         return;
     }
-    BVHNode* child0 = new BVHNode();
-    BVHNode* child1 = new BVHNode();
+    BVHTreeNode* child0 = new BVHTreeNode();
+    BVHTreeNode* child1 = new BVHTreeNode();
     node->children[0] = child0;
     node->children[1] = child1;
     node->triangles.clear();
@@ -44,32 +48,62 @@ void BVH::recursiveSpilt(BVHNode* node)
     recursiveSpilt(child1);
 }
 
+
+size_t BVH::recursiveFlatten(BVHTreeNode* node)
+{
+    BVHNode linear_node{
+        node->bounds,
+        0,
+        static_cast<int>(node->triangles.size())
+    };
+    size_t idx = nodes.size();
+    nodes.push_back(linear_node);
+    if(nodes[idx].triangles_count == 0) {
+        recursiveFlatten(node->children[0]);
+        nodes[idx].child1_index = recursiveFlatten(node->children[1]);
+    } else {
+        nodes[idx].triangles_index = ordered_triangles.size();
+        for(const auto& triangle : node->triangles) {
+            ordered_triangles.push_back(std::move(triangle));
+        }
+    }
+    return idx;
+}
+
 std::optional<HitInfo> BVH::intersect(Ray& ray, float t_min, float t_max) const 
 {
     std::optional<HitInfo> closest_hitinfo;
-    recursiveIntersect(root, ray, t_min, t_max, closest_hitinfo);
-    return closest_hitinfo;
-}
+    std::array<int, 32> stack;
+    auto ptr = stack.begin();
+    size_t current_node_index = 0;
 
-void BVH::recursiveIntersect(BVHNode* node, Ray& ray, float t_min, float &t_max, std::optional<HitInfo>& closest_hitinfo) const
-{
-    if(!node->bounds.hasIntersection(ray, t_min, t_max)) {
-        return;
-    }
+    while(true) {
+        auto& node = nodes[current_node_index];
+        if(!node.bounds.hasIntersection(ray, t_min, t_max)) {
+            if(ptr == stack.begin()) break;
+            current_node_index = *(--ptr);
+            continue;
+        }
 
-    if(node->triangles.empty()) {
-        // 不是叶子节点
-        recursiveIntersect(node->children[0], ray, t_min, t_max, closest_hitinfo);
-        recursiveIntersect(node->children[1], ray, t_min, t_max, closest_hitinfo);
-    } else {
-        // 是叶子节点
-        for(const auto& triangle : node->triangles)
-        {
-            auto hit_info = triangle.intersect(ray, t_min, t_max);
-            if(hit_info.has_value()) {
-                t_max = hit_info->t;
-                closest_hitinfo = hit_info;
+        if(node.triangles_count == 0) {
+            // 不是叶子节点
+            current_node_index++;
+            *(ptr++) = node.child1_index;
+        } else {
+          // 是叶子节点
+            auto triangle_iter = ordered_triangles.begin() + node.triangles_index;
+            for(int i=0; i<node.triangles_count; i++)
+            {
+                auto hit_info = triangle_iter->intersect(ray, t_min, t_max);
+                triangle_iter++;
+                if(hit_info.has_value()) {
+                    t_max = hit_info->t;
+                    closest_hitinfo = hit_info;
+                }
             }
+            if(ptr == stack.begin()) break;
+            current_node_index = *(--ptr);
         }
     }
+    return closest_hitinfo;
 }

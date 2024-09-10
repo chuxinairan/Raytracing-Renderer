@@ -84,3 +84,8 @@ int main() {
 
 // Add bvh
 // Render 128spp simple_rt.ppm: 15078ms
+
+// Tree structure To Array structure
+// Render 128spp simple_rt.ppm: 15100ms
+
+// node array cache hit rate  1、将三角形数组改成索引数组 2、优化node节点大小为32字节
