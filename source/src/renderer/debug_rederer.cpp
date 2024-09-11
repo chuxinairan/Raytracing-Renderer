@@ -7,7 +7,7 @@ glm::vec3 BoundsTestCountRenderer::renderPixel(const glm::ivec2 &pixelCoord) {
         auto ray = camera.generateRay(pixelCoord);
         auto hitinfo = scene.intersect(ray);
         if(hitinfo.has_value()) {
-            return RGB::GenerateHeatmapRGB(hitinfo->bounds_test_count / 200.0f);
+            return RGB::GenerateHeatmapRGB(hitinfo->bounds_test_count / 150.0f);
         }
         return {};
     #else
@@ -20,7 +20,7 @@ glm::vec3 TriangleTestCountRenderer::renderPixel(const glm::ivec2 &pixelCoord) {
         auto ray = camera.generateRay(pixelCoord);
         auto hitinfo = scene.intersect(ray);
         if(hitinfo.has_value()) {
-            return RGB::GenerateHeatmapRGB(hitinfo->triangle_test_count / 20.0f);
+            return RGB::GenerateHeatmapRGB(hitinfo->triangle_test_count / 7.0f);
         }
         return {};
     #else

@@ -6,7 +6,7 @@
 
 Model::Model(const std::filesystem::path& filename)
 {
-    PROFILE("Load model")
+    PROFILE("Load model " + filename.string())
 
     auto result = rapidobj::ParseFile(filename, rapidobj::MaterialLibrary::Ignore());
 

@@ -23,20 +23,20 @@ int main() {
 
   // Camera
   Film film{192*4, 108*4};
-  Camera camera{film, {0, 0, 3.6}, {0, 0, 0}, 45};
+  Camera camera{film, {-3.6, 0, 0}, {0, 0, 0}, 45};
 
   // Scene
-  Model model("models/dragon_87k.obj");
+  Model model("models/dragon_871k.obj");
   Sphere sphere{{0, 0, 0}, 1};
   Plane plane{{0, 0, 0}, {0, 1, 0}};
 
   Scene scene{};
-  scene.addShape(model, {RGB(202, 159, 117), false, RGB(202, 50, 100)},
-                 {0, 0, 0}, {3, 3, 3});
-  /*scene.addShape(sphere, {{1, 1, 1}, false, RGB(255, 128, 128)}, {0, 0, 2.5f});
+  scene.addShape(model, {RGB(202, 159, 117)},
+                 {0, 0, 0}, {1, 3, 2});
+  scene.addShape(sphere, {{1, 1, 1}, false, RGB(255, 128, 128)}, {0, 0, 2.5f});
   scene.addShape(sphere, {{1, 1, 1}, false, RGB(128, 128, 255)}, {0, 0, -2.5f});
   scene.addShape(sphere, {{1, 1, 1}, true}, {3, 0.5f, -2});
-  scene.addShape(plane, {RGB(120, 204, 157)}, {0, -0.5f, 0});*/
+  scene.addShape(plane, {RGB(120, 204, 157)}, {0, -0.5f, 0});
 
   NormalRenderer normal_renderer(camera, scene);
   normal_renderer.render(1, "normal.ppm");
@@ -110,3 +110,74 @@ int main() {
 
 // bounds除法优化
 // 向z轴负方向观察: 6554ms
+
+// x轴正方向
+
+// Without SHA
+// Total_Node_Count: 142643
+// Leaf_Node_Count: 71322
+// Total_Triangle_Count: 87130
+// Mean_leaf_node_triangle_count: 1.22164
+// Max_leaf_node_triangle_count: 23      
+// Load model models/dragon_87k.obj: 2144ms
+// Render 128spp simple_rt.ppm: 10164ms
+
+// With SHA
+// Total_Node_Count: 164067
+// Leaf_Node_Count: 82034
+// Total_Triangle_Count: 87130
+// Mean_leaf_node_triangle_count: 1.06212
+// Max_leaf_node_triangle_count: 8       
+// Load model models/dragon_87k.obj: 14872ms
+
+// With SHA and 3Dim
+// Total_Node_Count: 174195
+// Leaf_Node_Count: 87098
+// Total_Triangle_Count: 87130
+// Mean_leaf_node_triangle_count: 1.00037
+// Max_leaf_node_triangle_count: 3       
+// Load model models/dragon_87k.obj: 52932ms
+// Render 128spp simple_rt.ppm: 10516ms
+
+// Render dragon_871k.obj 
+// Total_Node_Count: 1742423
+// Leaf_Node_Count: 871212
+// Total_Triangle_Count: 871306
+// Mean_leaf_node_triangle_count: 1.00011
+// Max_leaf_node_triangle_count: 3       
+// Load model models/dragon_871k.obj:: 544866ms
+// Render 128spp simple_rt.ppm: 13007ms
+
+// Bucket quick build
+// Total_Node_Count: 1742425
+// Leaf_Node_Count: 871213                   
+// Total_Triangle_Count: 871306
+// Mean_leaf_node_triangle_count: 1.00011
+// Max_leaf_node_triangle_count: 3       
+// Load model models/dragon_871k.obj: 33247ms
+// Render 128spp simple_rt.ppm: 10934ms
+
+// Thread preempting optmization
+// Load model models/dragon_871k.obj: 21357ms
+
+// Menory allocator
+// Load model models/dragon_871k.obj: 12649ms
+
+// BVH vector reserve and bound assign
+// Load model models/dragon_871k.obj: 9650ms
+
+
+
+// Final cost
+
+// Release simple_dragon.obj 128spp
+// Load model models/dragon_871k.obj: 22ms
+// Render 128spp simple_rt.ppm、: 15018ms 
+
+// Release dragon_87k.obj 128spp
+// Load model models/dragon_871k.obj: 885ms
+// Render 128spp simple_rt.ppm、: 16217ms 
+
+// Release dragon_871k.obj 128spp
+// Load model models/dragon_871k.obj: 9858ms
+// Render 128spp simple_rt.ppm、: 16346ms 
