@@ -1,4 +1,4 @@
-#include <atomic>
+﻿#include <atomic>
 #include <iostream>
 
 #include <glm/glm.hpp>
@@ -19,41 +19,67 @@
 #include "renderer/debug_renderer.hpp"
 
 int main() {
-  std::atomic<int> count = 0;
+    Film film { 192 * 4, 108 * 4 };
+    Camera camera { film, { -12, 5, -12 }, { 0, 0, 0 }, 45 };
 
-  // Camera
-  Film film{192*4, 108*4};
-  Camera camera{film, {-3.6, 0, 0}, {0, 0, 0}, 45};
+    Model model("models/dragon_871k.obj");
+    Sphere sphere {
+        { 0, 0, 0 },
+        1
+    };
+    Plane plane {
+        { 0, 0, 0 },
+        { 0, 1, 0 }
+    };
 
-  // Scene
-  Model model("models/dragon_871k.obj");
-  Sphere sphere{{0, 0, 0}, 1};
-  Plane plane{{0, 0, 0}, {0, 1, 0}};
+    Scene scene {};
+    RNG rng { 1234 };
+    for (int i = 0; i < 10000; i ++) {
+        glm::vec3 random_pos {
+            rng.uniform() * 100 - 50,
+            rng.uniform() * 2,
+            rng.uniform() * 100 - 50,
+        };
+        float u = rng.uniform();
+        if (u < 0.9) {
+            scene.addShape(
+                model,
+                { RGB(202, 159, 117), rng.uniform() > 0.5 },
+                random_pos,
+                { 1, 1, 1 },
+                { rng.uniform() * 360, rng.uniform() * 360, rng.uniform() * 360 }
+            );
+        } else if (u < 0.95) {
+            scene.addShape(
+                sphere,
+                { { rng.uniform(), rng.uniform(), rng.uniform() }, true },
+                random_pos,
+                { 0.4, 0.4, 0.4 }
+            );
+        } else {
+            random_pos.y += 6;
+            scene.addShape(
+                sphere,
+                { { 1, 1, 1 }, false, { rng.uniform() * 4, rng.uniform() * 4, rng.uniform() * 4 } },
+                random_pos
+            );
+        }
+    }
+    scene.addShape(plane, { RGB(120, 204, 157) }, { 0, -0.5, 0 });
+    scene.build();
 
-  Scene scene{};
-  scene.addShape(model, {RGB(202, 159, 117)},
-                 {0, 0, 0}, {1, 3, 2});
-  scene.addShape(sphere, {{1, 1, 1}, false, RGB(255, 128, 128)}, {0, 0, 2.5f});
-  scene.addShape(sphere, {{1, 1, 1}, false, RGB(128, 128, 255)}, {0, 0, -2.5f});
-  scene.addShape(sphere, {{1, 1, 1}, true}, {3, 0.5f, -2});
-  scene.addShape(plane, {RGB(120, 204, 157)}, {0, -0.5f, 0});
+    NormalRenderer normal_renderer { camera, scene };
+    normal_renderer.render(1, "normal.ppm");
 
-  NormalRenderer normal_renderer(camera, scene);
-  normal_renderer.render(1, "normal.ppm");
-  
-  BoundsTestCountRenderer btc_renderer(camera, scene);
-  btc_renderer.render(1, "debug_BTC.ppm");
+    BoundsTestCountRenderer btc_renderer { camera, scene };
+    btc_renderer.render(1, "debug_BTC.ppm");
+    TriangleTestCountRenderer ttc_renderer { camera, scene };
+    ttc_renderer.render(1, "debug_TTC.ppm");
 
-  TriangleTestCountRenderer ttc_renderer(camera, scene);
-  ttc_renderer.render(1, "debug_TTC.ppm");
+    SimpleRTRenderer simple_rt_renderer { camera, scene };
+    simple_rt_renderer.render(128, "simple_rt.ppm");
 
-  BoundsDepthRenderer bc_renderer(camera, scene);
-  bc_renderer.render(1, "debug_DC.ppm");   
-
-  SimpleRTRenderer simple_rt_renderer(camera, scene);
-  simple_rt_renderer.render(128, "simple_rt.ppm");
-
-  return 0;
+    return 0;
 }
 
 
@@ -181,3 +207,13 @@ int main() {
 // Release dragon_871k.obj 128spp
 // Load model models/dragon_871k.obj: 9858ms
 // Render 128spp simple_rt.ppm、: 16346ms 
+
+
+// Render 100 instance
+// Render 128spp simple_rt.ppm: 109105ms 
+
+// Render 100 instance with SceneBVH
+// Render 128spp simple_rt.ppm: 19167ms
+
+// Render 10000 instance
+// Render 128spp simple_rt.ppm: 97648ms

@@ -1,4 +1,4 @@
-#include "acceleration/bvh.hpp"
+﻿#include "acceleration/bvh.hpp"
 
 #include <array>
 #include <iostream>
@@ -19,9 +19,12 @@ void BVH::build(std::vector<Triangle> &&triangles)
     std::cout << "Total_Node_Count: " << state.total_node_count << std::endl;
     std::cout << "Leaf_Node_Count: " << state.leaf_node_count << std::endl;
     std::cout << "Total_Triangle_Count: " << triangle_count << std::endl;
-    std::cout << "Mean_leaf_node_triangle_count: " << static_cast<float>(triangle_count) / state.leaf_node_count << std::endl;
+    std::cout << "Mean_leaf_node_triangle_count: " << static_cast<float>(triangle_count ) / state.leaf_node_count << std::endl;
     std::cout << "Max_leaf_node_triangle_count: " << state.max_leaf_node_triangle_count << std::endl;
+    std::cout << "Max_leaf_node_depth: " << state.max_leaf_node_depth << std::endl;
 
+    nodes.reserve(state.total_node_count);
+    ordered_triangles.reserve(triangle_count);
     recursiveFlatten(root);
 }
 
@@ -33,7 +36,6 @@ void BVH::recursiveSpilt(BVHTreeNode* node, BVHState& state)
         return;
     }
 
-    // bucket
     auto diag = node->bounds.diagonal();
     constexpr size_t bucket_count = 12;
     size_t min_split_index = 0;
@@ -121,102 +123,6 @@ void BVH::recursiveSpilt(BVHTreeNode* node, BVHState& state)
 
     recursiveSpilt(child0, state);
     recursiveSpilt(child1, state);
-    
-    
-    // SHA and 3Dim
-    /*
-    auto diag = node->bounds.diagonal();
-    std::vector<Triangle> child0_triangles, child1_triangles;
-    float min_cost = std::numeric_limits<float>::infinity();
-    for(size_t axis=0; axis<3; axis++) {
-        for(size_t i = 0; i < 11; i++) {
-            float mid = node->bounds.b_min[axis] + diag[axis] * (i + 1.0f) / 12.0f;
-            Bounds bounds0, bounds1;
-            std::vector<Triangle> child0_triangles_temp, child1_triangles_temp;
-            for(const auto& triangle : node->triangles)
-            {
-                if((triangle.p0[axis] + triangle.p1[axis] + triangle.p2[axis]) / 3.0f < mid) {
-                    bounds0.expand(triangle.p0);
-                    bounds0.expand(triangle.p1);
-                    bounds0.expand(triangle.p2);
-                    child0_triangles_temp.push_back(triangle); 
-                } else {
-                    bounds1.expand(triangle.p0);
-                    bounds1.expand(triangle.p1);
-                    bounds1.expand(triangle.p2);
-                    child1_triangles_temp.push_back(triangle);
-                }
-            }
-            if(child0_triangles_temp.empty() || child1_triangles_temp.empty()) {
-                continue;
-            }
-            float cost = bounds0.area() * child0_triangles_temp.size() + bounds1.area() * child1_triangles_temp.size();
-            if(cost < min_cost) {
-                min_cost = cost;
-                child0_triangles = std::move(child0_triangles_temp);
-                child1_triangles = std::move(child1_triangles_temp);
-                node->split_axis = axis;
-            }
-        }
-    }
-    if(child0_triangles.empty() || child1_triangles.empty()) {
-        state.addLeafNode(node);
-        return;
-    }
-
-    BVHTreeNode* child0 = new BVHTreeNode();
-    BVHTreeNode* child1 = new BVHTreeNode();
-    node->children[0] = child0;
-    node->children[1] = child1;
-    node->children[0]->depth = node->depth + 1;
-    node->children[1]->depth = node->depth + 1;
-    node->triangles.clear();
-    node->triangles.shrink_to_fit();
-    child0->triangles = std::move(child0_triangles);
-    child1->triangles = std::move(child1_triangles);
-    child0->updateBounds();
-    child1->updateBounds();
-    
-    recursiveSpilt(child0, state);
-    recursiveSpilt(child1, state);
-    */
-    
-    // Without SHA
-    /*
-    auto diag = node->bounds.diagonal();
-    std::vector<Triangle> child0_triangles, child1_triangles;
-    size_t max_axis = diag.x > diag.y ? (diag.x > diag.z ? 0 : 2) : (diag.y > diag.z ? 1 : 2);
-    float mid = node->bounds.b_min[max_axis] + diag[max_axis] * 0.5f;
-    node->split_axis = max_axis;
-    for(const auto& triangle : node->triangles)
-    {
-        if((triangle.p0[max_axis] + triangle.p1[max_axis] + triangle.p2[max_axis]) / 3.0f < mid) {
-            child0_triangles.push_back(triangle); 
-        } else {
-            child1_triangles.push_back(triangle);
-        }
-    }
-
-    if(child0_triangles.empty() || child1_triangles.empty()) {
-        state.addLeafNode(node);
-        return;
-    }
-    BVHTreeNode* child0 = new BVHTreeNode();
-    BVHTreeNode* child1 = new BVHTreeNode();
-    node->children[0] = child0;
-    node->children[1] = child1;
-    node->children[0]->depth = node->depth + 1;
-    node->children[1]->depth = node->depth + 1;
-    node->triangles.clear();
-    node->triangles.shrink_to_fit();
-    child0->triangles = std::move(child0_triangles);
-    child1->triangles = std::move(child1_triangles);
-    child0->updateBounds();
-    child1->updateBounds();
-    
-    recursiveSpilt(child0, state);
-    recursiveSpilt(child1, state);
-    */
 }
 
 
@@ -226,7 +132,6 @@ size_t BVH::recursiveFlatten(BVHTreeNode* node)
         node->bounds,
         0,
         static_cast<uint16_t>(node->triangles.size()),
-        static_cast<uint8_t>(node->depth),
         static_cast<uint8_t>(node->split_axis)
     };
     size_t idx = nodes.size();
@@ -243,7 +148,7 @@ size_t BVH::recursiveFlatten(BVHTreeNode* node)
     return idx;
 }
 
-std::optional<HitInfo> BVH::intersect(Ray& ray, float t_min, float t_max) const 
+std::optional<HitInfo> BVH::intersect(const Ray& ray, float t_min, float t_max) const 
 {
     std::optional<HitInfo> closest_hitinfo;
     std::array<int, 32> stack;
@@ -286,23 +191,20 @@ std::optional<HitInfo> BVH::intersect(Ray& ray, float t_min, float t_max) const
             DEBUG_LINE(triangle_test_count += node.triangles_count)
             for(int i=0; i<node.triangles_count; i++)
             {
-                
                 auto hit_info = triangle_iter->intersect(ray, t_min, t_max);
                 triangle_iter++;
                 if(hit_info.has_value()) {
                     t_max = hit_info->t;
                     closest_hitinfo = hit_info;
-                    DEBUG_LINE(closest_hitinfo->bounds_depth = node.depth)
                 }
             }
             if(ptr == stack.begin()) break;
             current_node_index = *(--ptr);
         }
     }
-    if(closest_hitinfo.has_value()) {
-        DEBUG_LINE(closest_hitinfo->bounds_test_count = bounds_test_count)
-        DEBUG_LINE(closest_hitinfo->triangle_test_count = triangle_test_count)
-    }
+
+    DEBUG_LINE(ray.bounds_test_count += bounds_test_count)
+    DEBUG_LINE(ray.triangle_test_count += triangle_test_count)
 
     return closest_hitinfo;
 }

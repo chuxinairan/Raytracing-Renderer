@@ -25,11 +25,7 @@ void BaseRenderer::render(size_t spp, const std::filesystem::path& filename)
         thread_pool.wait();
 
         current_spp += increase;
-
         increase = std::min<size_t>(current_spp, 32);
-        if(current_spp + increase > spp){
-            increase = spp - current_spp;
-        }
         
         film.save(filename);
         std::cout << current_spp << "spp " << "has been saved to " << filename << std::endl;

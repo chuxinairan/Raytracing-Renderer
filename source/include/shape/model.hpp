@@ -1,7 +1,9 @@
 #pragma once
 
-#include "triangle.hpp"
 #include <filesystem>
+
+#include "shape.hpp"
+#include "triangle.hpp"
 
 #include "acceleration/bvh.hpp"
 
@@ -14,8 +16,9 @@ public:
     }
 
     Model(const std::filesystem::path& filename);
-
-    std::optional<HitInfo> intersect(Ray& ray, float t_min = 1e-5, float t_max = std::numeric_limits<float>::infinity()) const override;
+    std::optional<HitInfo> intersect(const Ray& ray, float t_min, float t_max) const override;
+    
+    Bounds getBounds() const override { return bvh.getBounds(); }
 private:
-    BVH bvh;
+    BVH bvh {};
 };

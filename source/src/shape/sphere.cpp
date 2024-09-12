@@ -1,6 +1,6 @@
 #include "shape/sphere.hpp"
 
-std::optional<HitInfo> Sphere::intersect(Ray& ray, float t_min, float t_max) const
+std::optional<HitInfo> Sphere::intersect(const Ray& ray, float t_min, float t_max) const
 {
     glm::vec3 co = ray.origin - center;
     float a = glm::dot(ray.direction, ray.direction);

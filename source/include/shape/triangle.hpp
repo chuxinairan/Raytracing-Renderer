@@ -19,7 +19,15 @@ struct Triangle : public Shape
             n2 = normal;
         }
 
-    std::optional<HitInfo> intersect(Ray& ray, float t_min = 1e-5, float t_max = std::numeric_limits<float>::infinity()) const override;
+    std::optional<HitInfo> intersect(const Ray& ray, float t_min, float t_max) const override;
+
+    Bounds getBounds() const override {
+        Bounds bounds{};
+        bounds.expand(p0);
+        bounds.expand(p1);
+        bounds.expand(p2);
+        return bounds;
+    }
 
     glm::vec3 p0, p1, p2;
     glm::vec3 n0, n1, n2;

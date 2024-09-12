@@ -1,6 +1,6 @@
 #include "shape/triangle.hpp"
 
-std::optional<HitInfo> Triangle::intersect(Ray& ray, float t_min, float t_max) const
+std::optional<HitInfo> Triangle::intersect(const Ray& ray, float t_min, float t_max) const
 {
     glm::vec3 e1 = p1 - p0;
     glm::vec3 e2 = p2 - p0;
