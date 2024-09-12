@@ -4,7 +4,7 @@
 
 #include "utils/rng.hpp"
 
-constexpr float PI = 3.14159265359;
+constexpr float PI = 3.14159265359f;
 
 inline glm::vec2 UniformSampleUnitDisk(const glm::vec2 &u) {
     float r = sqrt(u.x);
@@ -18,7 +18,7 @@ inline glm::vec3 CosineSampleHemisphere(const glm::vec2 &u) {
     return { r * glm::cos(phi), glm::sqrt(1 - r * r), r * glm::sin(phi) };
 }
 
-inline glm::vec3 UniformSampleHemisphere(RNG &rng) {
+inline glm::vec3 UniformSampleHemisphere(const RNG &rng) {
     glm::vec3 result;
     do {
         result = { rng.uniform(), rng.uniform(), rng.uniform() };

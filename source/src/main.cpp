@@ -11,11 +11,13 @@
 #include "shape/scene.hpp"
 #include "shape/sphere.hpp"
 
+#include "material/diffuse_material.hpp"
+#include "material/specular_material.hpp"
+
 #include "utils/rgb.hpp"
 #include "utils/rng.hpp"
 
 #include "renderer/normal_renderer.hpp"
-#include "renderer/simple_rt_renderer.hpp"
 #include "renderer/debug_renderer.hpp"
 #include "renderer/path_tracing_renderer.hpp"
 
@@ -42,10 +44,17 @@ int main() {
             rng.uniform() * 100 - 50,
         };
         float u = rng.uniform();
+        
         if (u < 0.9) {
+            Material* material;
+            if(u > 0.5) {
+                material = new SpecularMaterial{RGB(202, 159, 117)};
+            } else {
+                material = new DiffuseMaterial{RGB(202, 159, 117)};
+            }
             scene.addShape(
                 model,
-                { RGB(202, 159, 117), rng.uniform() > 0.5 },
+                material,
                 random_pos,
                 { 1, 1, 1 },
                 { rng.uniform() * 360, rng.uniform() * 360, rng.uniform() * 360 }
@@ -53,20 +62,23 @@ int main() {
         } else if (u < 0.95) {
             scene.addShape(
                 sphere,
-                { { rng.uniform(), rng.uniform(), rng.uniform() }, true },
+                new SpecularMaterial{{ rng.uniform(), rng.uniform(), rng.uniform() }},
                 random_pos,
                 { 0.4, 0.4, 0.4 }
             );
         } else {
             random_pos.y += 6;
+            Material* material = new DiffuseMaterial{{ 1, 1, 1 }};
+            material->setEmissive({ rng.uniform() * 4, rng.uniform() * 4, rng.uniform() * 4 });
             scene.addShape(
                 sphere,
-                { { 1, 1, 1 }, false, { rng.uniform() * 4, rng.uniform() * 4, rng.uniform() * 4 } },
+                material,
                 random_pos
             );
+            
         }
     }
-    scene.addShape(plane, { RGB(120, 204, 157) }, { 0, -0.5, 0 });
+    scene.addShape(plane, new DiffuseMaterial{RGB(120, 204, 157) }, { 0, -0.5, 0 });
     scene.build();
 
     NormalRenderer normal_renderer { camera, scene };
@@ -77,11 +89,8 @@ int main() {
     TriangleTestCountRenderer ttc_renderer { camera, scene };
     ttc_renderer.render(1, "debug_TTC.ppm");
 
-    //SimpleRTRenderer simple_rt_renderer { camera, scene };
-    //simple_rt_renderer.render(128, "RT_test.ppm");
-
     PathTracingRenderer path_tracing_renderer { camera, scene };
-    path_tracing_renderer.render(128, "PT_test.ppm");
+    path_tracing_renderer.render(128, "PT_test_material.ppm");
 
     return 0;
 }

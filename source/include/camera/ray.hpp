@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "shape/material.hpp"
+#include "material/material.hpp"
 
 #include "utils/debug_macro.hpp"
 

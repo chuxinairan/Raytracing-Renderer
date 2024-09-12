@@ -18,13 +18,11 @@ class ThreadPool {
 public:
   static void WorkerThread(ThreadPool *master);
 
-  void wait() const;
-
   ThreadPool(size_t thread_count = 0);
   ~ThreadPool();
 
-  void parallelFor(size_t width, size_t height,
-                   const std::function<void(size_t, size_t)> &lambda, bool isComplex = true);
+  void parallelFor(size_t width, size_t height, const std::function<void(size_t, size_t)> &lambda, bool isComplex = true);
+  void wait() const;
 
   void addTask(Task *task);
   Task *getTask();
@@ -32,7 +30,7 @@ public:
 private:
   std::atomic<int> alive;
   std::vector<std::thread> threads;
-  std::atomic<int> pending_task_count;  // 记录未执行完成的任务数量
+  std::atomic<int> pending_task_count;
   std::queue<Task *> tasks;
   Spinlock spin_lock{};
 };

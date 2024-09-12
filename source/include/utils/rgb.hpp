@@ -46,7 +46,7 @@ public:
             return RGB{255, 0, 0};
         }
         float idx_float = t * (color_pallet.size() - 1);
-        size_t idx = glm::floor(idx_float);
+        size_t idx = (size_t)glm::floor(idx_float);
         return lerp(color_pallet[idx], color_pallet[idx+1], glm::fract(idx_float));
     }
 
@@ -54,9 +54,9 @@ public:
 
     // 真实物理世界的光照强度做gamma矫正
     RGB(const glm::vec3 &color) {
-        r = glm::clamp<int>(glm::pow(color.x, 1.0f / 2.2f) * 255, 0, 255);
-        g = glm::clamp<int>(glm::pow(color.y, 1.0f / 2.2f) * 255, 0, 255);
-        b = glm::clamp<int>(glm::pow(color.z, 1.0f / 2.2f) * 255, 0, 255);
+        r = glm::clamp<int>((int)(glm::pow(color.x, 1.0f / 2.2f) * 255), 0, 255);
+        g = glm::clamp<int>((int)(glm::pow(color.y, 1.0f / 2.2f) * 255), 0, 255);
+        b = glm::clamp<int>((int)(glm::pow(color.z, 1.0f / 2.2f) * 255), 0, 255);
     }
 
     // sRGB是处在gamma0.45空间下的，这里做的是做gamma correction remove，来变换到物理线性空间
@@ -74,8 +74,8 @@ public:
 inline RGB lerp(const RGB& a, const RGB& b, float t)
 {
     return {
-        glm::clamp<int>(a.r + (b.r - a.r) * t, 0, 255),
-        glm::clamp<int>(a.g + (b.g - a.g) * t, 0, 255),
-        glm::clamp<int>(a.b + (b.b - a.b) * t, 0, 255)
+        glm::clamp<int>((int)(a.r + (b.r - a.r) * t), 0, 255),
+        glm::clamp<int>((int)(a.g + (b.g - a.g) * t), 0, 255),
+        glm::clamp<int>((int)(a.b + (b.b - a.b) * t), 0, 255)
     };
 }
