@@ -17,6 +17,7 @@
 #include "renderer/normal_renderer.hpp"
 #include "renderer/simple_rt_renderer.hpp"
 #include "renderer/debug_renderer.hpp"
+#include "renderer/path_tracing_renderer.hpp"
 
 int main() {
     Film film { 192 * 4, 108 * 4 };
@@ -76,8 +77,11 @@ int main() {
     TriangleTestCountRenderer ttc_renderer { camera, scene };
     ttc_renderer.render(1, "debug_TTC.ppm");
 
-    SimpleRTRenderer simple_rt_renderer { camera, scene };
-    simple_rt_renderer.render(128, "simple_rt.ppm");
+    //SimpleRTRenderer simple_rt_renderer { camera, scene };
+    //simple_rt_renderer.render(128, "RT_test.ppm");
+
+    PathTracingRenderer path_tracing_renderer { camera, scene };
+    path_tracing_renderer.render(128, "PT_test.ppm");
 
     return 0;
 }
